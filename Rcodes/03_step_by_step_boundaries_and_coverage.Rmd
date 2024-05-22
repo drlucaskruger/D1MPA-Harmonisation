@@ -1,0 +1,1145 @@
+---
+title: 'Harmonizing the Domain 1 Marine Protected Area: new/updated krill and predators
+  data to redefine boundaries and integrate seasonality in the MPA design'
+author: "Lucas Krüger"
+date: "2024-05-14"
+output: html_document
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This code uses the previous layers used as conservation objectives in the development of the design of the Domain 1 Marine Protected Area (D1MPA) and adds new data available from openly available peer-reviewed literature to redefine the boundaries of General Protection Zones and use seasonality of predator distribution to introduce temporal variability in the proposition of the MPA.
+
+The code follows up from the previously standardized tracking data and standardized 2018 layers, files 01_Raw_Tracking_Data_Processment.R and 02_Krill_and_Predator_Layers_2018_rasterization.R
+
+
+First, use the 'trip' package to regularize tracking data and calcualte cumulative area usage in 3-months periods (JFM, AMJ,JAS and OND)
+
+```{r}
+library(lubridate)
+library(raster)
+library(dplyr)
+library(adehabitatHR)
+library(adehabitatLT)
+library(sp)
+library(trip)
+library(ggplot2)
+library(patchwork)
+library(terra)
+library(reshape2)
+
+mask <- raster("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/D1_Mask/D1_Mask.tif") # mask
+
+plot(mask)
+
+EPSG6932<-crs(mask) # extract the coordinate spatial system from the object
+
+EPSG4326<-CRS("+proj=longlat +datum=WGS84 +no_defs")
+
+D1<-shapefile("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Shapefiles/D1_6932.shp")
+
+
+###----------Humpback Whale----------
+
+hbw.ld2<-read.csv("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Processed_Tracking_Data/Whale_Humpback.csv")
+
+hbw.ld2$quarter<-quarter(hbw.ld2$date)
+
+hbw.ld2$idy<-paste(hbw.ld2$id,year(hbw.ld2$date),month(hbw.ld2$date),week(hbw.ld2$date))
+
+hbw.q1<-subset(hbw.ld2,quarter=="1")
+hbw.q2<-subset(hbw.ld2,quarter=="2")
+
+
+# JFM
+d <- data.frame(x=hbw.q1$x,y=hbw.q1$y, tms=hbw.q1$date, id=hbw.q1$idy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+
+max(y)
+
+ym<-y/31.45
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Whale_Humpback_JFM.tif", overwrite=TRUE)
+
+
+# AMJ 
+
+d <- data.frame(x=hbw.q2$x,y=hbw.q2$y, tms=hbw.q2$date, id=hbw.q2$idy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+
+max(y)
+
+ym<-y/35.7
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Whale_Humpback_AMJ.tif", overwrite=TRUE)
+
+###----------Minke WHale--------------
+amw.ld2<-read.csv("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Processed_Tracking_Data/Whale_AntarcticMinke.csv")
+
+amw.q1<-subset(amw.ld2,quarter=="1")
+amw.q2<-subset(amw.ld2,quarter=="2")
+
+
+# JFM
+d <- data.frame(x=amw.q1$x,y=amw.q1$y, tms=amw.q1$date, id=amw.q1$idy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+
+max(y)
+
+ym<-y/0.49
+
+plot(ym)
+
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Whale_AntMinke_JFM.tif", overwrite=TRUE)
+
+
+# AMJ 
+
+d <- data.frame(x=amw.q2$x,y=amw.q2$y, tms=amw.q2$date, id=amw.q2$idy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+
+max(y)
+
+ym<-y/0.20
+
+plot(ym)
+
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Whale_AntMinke_AMJ.tif", overwrite=TRUE)
+
+
+#### -------------Crabeater Seal-----------------
+crab.ld2<-read.csv("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Processed_Tracking_Data/Seal_Crabeater.csv")
+
+crab.q1<-subset(crab.ld2,quarter=="1")
+crab.q2<-subset(crab.ld2,quarter=="2")
+crab.q3<-subset(crab.ld2,quarter=="3")
+crab.q4<-subset(crab.ld2,quarter=="4")
+
+
+# amj
+
+d <- data.frame(x=crab.q2$x,y=crab.q2$y, tms=crab.q2$date, id=crab.q2$id)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+
+max(y)
+
+ym<-y/71.221
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Crabeater_AMJ.tif", overwrite=TRUE)
+
+
+# jas
+
+
+d <- data.frame(x=crab.q3$x,y=crab.q3$y, tms=crab.q3$date, id=crab.q3$idy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+
+max(y)
+
+ym<-y/77.44
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Crabeater_JAS.tif", overwrite=TRUE)
+
+#ond
+
+d <- data.frame(x=crab.q4$x,y=crab.q4$y, tms=crab.q4$date, id=crab.q4$idy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+
+max(y)
+
+ym<-y/31.11
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Crabeater_OND.tif", overwrite=TRUE)
+
+
+###------Antarctic Fur Seal----------------
+
+afs.ld2<-read.csv("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Processed_Tracking_Data/Seal_Fur.csv")
+
+afs.ld2$quarter<-quarter(afs.ld2$date)
+afs.q1<-subset(afs.ld2,quarter=="1")
+afs.q2<-na.omit(subset(afs.ld2,quarter=="2"))
+afs.q3<-subset(afs.ld2,quarter=="3")
+afs.q4<-subset(afs.ld2,quarter=="4")
+
+#jfm
+
+d <- data.frame(x=afs.q1$x,y=afs.q1$y, tms=afs.q1$date, id=afs.q1$IDy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+
+max(y)
+
+ym<-y/17.7
+
+plot(ym)
+
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Fur_JFM.tif", overwrite=TRUE)
+
+# amj
+
+d <- data.frame(x=afs.q2$x,y=afs.q2$y, tms=afs.q2$date, id=afs.q2$IDy)
+tr <- trip(d,correct_all = T)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+y<-y+mask
+max(y)
+
+ym<-y/20.94
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Fur_AMJ.tif", overwrite=TRUE)
+
+
+# jas
+afs.q3$IDy<-paste(afs.q3$id,year(afs.q3$date),week(afs.q3$date))
+d <- data.frame(x=afs.q3$x,y=afs.q3$y, tms=afs.q3$date, id=afs.q3$IDy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-cover(tg,mask)/(3600)/24
+y<-y+mask
+max(y)
+
+ym<-y/7.24
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Fur_JAS.tif", overwrite=TRUE)
+
+#ond
+
+afs.q4$IDy<-paste(afs.q4$id,year(afs.q4$date),week(afs.q4$date))
+d <- data.frame(x=afs.q4$x,y=afs.q4$y, tms=afs.q4$date, id=afs.q4$IDy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-(cover(tg,mask)/(3600)/24)+mask
+
+max(y)
+
+ym<-y/4.73
+
+plot(ym)
+
+writeRaster(y,"C:/D1MPA trimestral/Trip/Seal_Fur_OND.tif", overwrite=TRUE)
+
+
+###-----------Elephant Seal----------------
+
+soes.ld2<-read.csv("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Processed_Tracking_Data/Seal_Elephant.csv")
+
+soes.ld2$quarter<-quarter(soes.ld2$date)
+summary(as.factor(soes.ld2$quarter))
+
+soes.q1<-subset(soes.ld2,quarter=="1")
+soes.q2<-subset(soes.ld2,quarter=="2")
+soes.q3<-subset(soes.ld2,quarter=="3")
+soes.q4<-subset(soes.ld2,quarter=="4")
+
+
+#jfm
+
+d <- data.frame(x=soes.q1$x,y=soes.q1$y, tms=soes.q1$date, id=soes.q1$idy)
+tr <- trip(d)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-(cover(tg,mask)/(3600)/24)+mask
+
+max(y)
+
+ym<-y/156.1
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Elephant_JFM.tif", overwrite=TRUE)
+
+# amj
+
+dq2 <- data.frame(x=soes.q2$x,y=soes.q2$y, tms=soes.q2$date, id=soes.q2$idy)
+tr2 <- trip(dq2,correct_all = T)
+tg2 <- rasterize(tr2, mask, field = "tms") # in seconds
+
+y2<-(cover(tg2,mask)/(3600)/24)+mask
+
+max(y2)
+
+ym2<-y2/108.01
+
+plot(ym2)
+
+writeRaster(ym2,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Elephant_AMJ.tif", overwrite=TRUE)
+
+# jas
+
+d3 <- data.frame(x=soes.q3$x,y=soes.q3$y, tms=soes.q3$date, id=soes.q3$idy)
+tr3 <- trip(d3)
+tg3 <- rasterize(tr3, mask, field = "tms") # in seconds
+
+y3<-(cover(tg3,mask)/(3600)/24)+mask
+
+max(y3)
+
+ym3<-y3/77.001
+
+plot(ym3)
+
+writeRaster(ym3,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Elephant_JAS.tif", overwrite=TRUE)
+
+#ond
+d4 <- data.frame(x=soes.q4$x,y=soes.q4$y, tms=soes.q4$date, id=soes.q4$idy)
+tr4 <- trip(d4)
+
+tg4 <- rasterize(tr4, mask, field = "tms") # in seconds
+
+y4<-(cover(tg4,mask)/(3600)/24)+mask
+
+max(y4)
+
+ym4<-y4/367.01
+
+plot(ym4)
+
+writeRaster(ym4,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Seal_Elephant_OND.tif", overwrite=TRUE)
+
+
+###-------Penguins------------
+
+pengm<-read.csv("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Processed_Tracking_Data/penguins.csv")
+
+pengm$timestamp<-as.POSIXct(strptime(pengm$timestamp,
+                                     format="%Y-%m-%d %H:%M:%S", tz="GMT"))
+pengm$month<-month(pengm$timestamp)
+pengm$id<-paste(pengm$Spp,pengm$id,pengm$month)
+
+#pengm<-subset(pengm,month<9)
+
+pengm2<-plyr::ddply(pengm, c("id"), summarise,
+                    N=length(lon)) 
+
+pengms<-merge(pengm,pengm2,by="id")
+
+pengms<-subset(pengms,N.y>5)
+
+adp<-subset(pengms,Spp=="ADPE")
+chp<-subset(pengms,Spp=="CHPE")
+gep<-subset(pengms,Spp=="GEPE")
+
+adp<-subset(adp,lon>(-75))
+
+gep<-subset(gep,lon<(-50) & lon>(-67))
+gep<-subset(gep,lat<(-61.5))
+
+adsp<-SpatialPointsDataFrame(adp[6:7],adp,proj4string = EPSG4326)
+chsp<-SpatialPointsDataFrame(chp[6:7],chp,proj4string = EPSG4326)
+gesp<-SpatialPointsDataFrame(gep[6:7],gep,proj4string = EPSG4326)
+
+adspW<-sp::spTransform(adsp,CRS("+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"))
+chspW<-sp::spTransform(chsp,CRS("+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"))
+gespW<-sp::spTransform(gesp,CRS("+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"))
+
+plot(adspW)
+plot(chspW)
+plot(gespW)
+
+### --------gentoo penguin----------------
+
+gepW<-raster::intersect(gespW,D1)
+
+geps<-data.frame(gepW)
+
+head(geps)
+geps<- geps[!duplicated(geps[, c("timestamp","id")]), ]
+
+gep.lt<-as.ltraj(xy=geps[18:19],date=geps$timestamp,id=geps$id,proj4string = EPSG6932)
+
+gep.ld<-ld(gep.lt)
+
+ggplot(gep.ld,aes(dist))+geom_histogram()
+
+gep.ld2<-subset(gep.ld,dist<50000) #eliminate positions based on consecutive points distance 
+
+gep.ld2$year<-year(gep.ld2$date)
+
+gep.ld2$quarter<-quarter(gep.ld2$date)
+gep.q1<-subset(gep.ld2,quarter=="1")
+gep.q2<-subset(gep.ld2,quarter=="2")
+gep.q3<-subset(gep.ld2,quarter=="3")
+gep.q4<-subset(gep.ld2,quarter=="4")
+
+plot(gep.q2$x,gep.q2$y)
+
+# amj
+
+d <- data.frame(x=gep.q2$x,y=gep.q2$y, tms=gep.q2$date, id=gep.q2$id)
+tr <- trip(d,correct_all = T)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-(cover(tg,mask)/(3600)/24)+mask
+
+max(y)
+
+ym<-y/8.71
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Penguin_Gentoo_AMJ.tif", overwrite=TRUE)
+
+# jas
+
+d3 <- data.frame(x=gep.q3$x,y=gep.q3$y, tms=gep.q3$date, id=gep.q3$id)
+tr3 <- trip(d3,correct_all = T)
+
+tg3 <- rasterize(tr3, mask, field = "tms") # in seconds
+
+y3<-(cover(tg3,mask)/(3600)/24)+mask
+
+max(y3)
+
+ym3<-y3/1.14
+
+plot(ym3)
+
+writeRaster(ym3,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Penguin_Gentoo_JAS.tif", overwrite=TRUE)
+
+### -----chinstrap-------
+
+summary(as.factor(chp$Col))
+
+chspW<-raster::intersect(chspW,D1)
+
+chps<-data.frame(chspW)
+
+chps<- chps[!duplicated(chps[, c("timestamp","id")]), ]
+
+head(chps)
+
+chp.lt<-as.ltraj(xy=chps[18:19],date=chps$timestamp,id=chps$id,proj4string = EPSG6932)
+
+chp.ld<-ld(chp.lt)
+
+ggplot(chp.ld,aes(dist))+geom_histogram()
+
+
+chp.ld2<-subset(chp.ld,dist<50000) #eliminate positions based on consecutive points distance 
+
+chp.ld2$quarter<-quarter(chp.ld2$date)
+chp.q1<-subset(chp.ld2,quarter=="1")
+chp.q2<-subset(chp.ld2,quarter=="2")
+chp.q3<-subset(chp.ld2,quarter=="3")
+chp.q4<-subset(chp.ld2,quarter=="4")
+
+# amj
+
+d <- data.frame(x=chp.q2$x,y=chp.q2$y, tms=chp.q2$date, id=chp.q2$id)
+
+tr <- trip(d,correct_all = T)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-(cover(tg,mask)/(3600)/24)+mask
+
+max(y)
+
+ym<-y/1.153
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Penguin_Chinstrap_AMJ.tif", overwrite=TRUE)
+
+# jas
+
+d <- data.frame(x=chp.q3$x,y=chp.q3$y, tms=chp.q3$date, id=chp.q3$id)
+tr <- trip(d,correct_all = T)
+
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-(cover(tg,mask)/(3600)/24)+mask
+
+max(y)
+
+ym<-y/0.15
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Penguin_Chinstrap_JAS.tif", overwrite=TRUE)
+
+##----------adelie penguin--------------
+
+summary(as.factor(adp$Col))
+
+adspW<-raster::intersect(adspW,D1)
+
+adps<-data.frame(adspW)
+
+
+adps<- adps[!duplicated(adps[, c("timestamp","id")]), ]
+
+head(adps)
+
+adp.lt<-as.ltraj(xy=adps[18:19],date=adps$timestamp,id=adps$id,proj4string = EPSG6932)
+
+adp.ld<-ld(adp.lt)
+
+ggplot(adp.ld,aes(x,y))+geom_point()
+
+ggplot(adp.ld,aes(dist))+geom_histogram()
+
+adp.ld2<-subset(adp.ld,dist<50000) #eliminate positions based on consecutive points distance 
+
+adp.ld2$month<-month(adp.ld2$date)
+
+adspM<-subset(adp.ld2,month=="2"|month=="3"|month=="4"|month=="1")
+
+
+d <- data.frame(x=adspM$x,y=adspM$y, tms=adspM$date, id=adspM$id)
+tr <- trip(d,correct_all = T)
+tg <- rasterize(tr, mask, field = "tms") # in seconds
+
+y<-(cover(tg,mask)/(3600)/24)+mask
+
+max(y)
+
+ym<-y/10.1
+
+plot(ym)
+
+writeRaster(ym,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/Penguin_Adelie_Mig.tif", overwrite=TRUE)
+
+
+```
+
+## 
+
+Now join all the predators layers to generate a grid file that represents the number of layers, which is one of the criteria used to redefine GPZ.After generating those files, vertices for the new boundaries were drawn in ArcMap, and a .csv file was generated.
+
+```{r}
+
+###------------- rescale data to binary ----------------
+
+# load files
+
+# Set the directory where TIF files are located
+tif_directory <- "C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Predators_rescaled_area_usage/"
+
+# List all TIF files in the directory
+tif_files <- list.files(tif_directory, pattern = ".tif$", full.names = T)
+
+# Load all TIF files into a raster stack
+raster_stack <- terra::rast(tif_files)
+
+# Define the number of intervals
+num_intervals <- 2
+
+
+for (i in 1:nlyr(raster_stack)) {
+  # Extract the ith layer
+  raster_layer <- raster_stack[[i]]
+  
+  # Calculate the 0.05 quantile
+  quantile_005 <- quantile(values(raster_layer), probs = 0.95,na.rm=T)
+  
+  # Reclassify the raster layer
+  reclassified_layer <- terra::ifel(raster_layer > quantile_005, 1, 0)
+  
+  # Replace the original layer with the reclassified layer in the raster stack
+  raster_stack[[i]] <- reclassified_layer
+}
+
+
+# Plot the reclassified raster stack
+plot(raster_stack)
+
+# load additional binary files 
+
+# Set the directory where TIF files are located
+tif_directory2 <- "C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Non-tracking_layers/"
+
+# List all TIF files in the directory
+tif_files2 <- list.files(tif_directory2, pattern = ".tif$", full.names = T)
+
+
+# Load all TIF files into a raster stack
+raster_stack2 <- terra::rast(tif_files2)
+plot(raster_stack2)
+
+
+#stack both stacks together
+rasters<-c(raster_stack,raster_stack2)
+
+rsum<-sum(rasters) # sum all stacks
+
+plot(rsum)
+
+max(rsum)
+
+writeRaster(rsum,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/UpDated_Layers_Sum.tif",overwrite=T)
+
+
+### -------2018 layers------------
+
+# load additional binary files 
+
+# Set the directory where TIF files are located
+tif_directory3 <- "C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Layers2018/geotiff"
+
+# List all TIF files in the directory
+tif_files3 <- list.files(tif_directory3, pattern = ".tif$", full.names = T)
+
+tif_files3
+
+# Load all TIF files into a raster stack
+
+raster_stack3 <- terra::rast(tif_files3)
+
+plot(raster_stack3)
+
+layers_2018<-sum(raster_stack3)
+
+writeRaster(layers_2018,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Layers2018_Sum.tif",overwrite=T)
+
+#stack all stacks together
+rasters<-c(raster_stack,raster_stack2,raster_stack3)
+
+rsum2<-sum(rasters) # sum all stacks
+
+plot(rsum2)
+
+max(rsum2)
+
+
+writeRaster(rsum2,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/AllLayers_Sum.tif",overwrite=T)
+
+
+```
+
+Next, with the vertices files, generate a polygon
+
+```{r}
+
+library(raster)
+library(terra)
+library(sf)
+
+Peninsula<-readRDS("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/VerticesFiles/Peninsula.Rds") # land shapefile downloaded from the Antarctica Digital data base ('Gerrish, L., Ireland, L., Fretwell, P., & Cooper, P. (2023). High resolution vector polygons of the Antarctic coastline (7.7) [Data set]. UK Polar Data Centre, Natural Environment Research Council, UK Research & Innovation. https://doi.org/10.5285/0be5339c-9d35-44c9-a10f-da4b5356840b') and subsetted to match Domain 1 limits
+
+crs<-crs(Peninsula)  # coordinate system, South Polar Lambert Azimuthal Equal Area, ESRI 102020
+
+D1MPA<-read.csv("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/VerticesFiles/D1MPA_Vertices_2024.csv") # D1MPA vertices
+
+wap = st_as_sf(Peninsula)
+
+
+xys = st_as_sf(D1MPA, coords=c("Lon_ESRI_102020","Lat_ESRI_102020"),crs=crs) # convert to a simple feature object
+
+polys = xys %>% 
+  dplyr::group_by(Name) %>% 
+  dplyr::summarise(geometry = st_combine(geometry)) %>%
+  st_cast("POLYGON")
+
+plot(polys)
+
+
+### now eliminate the land from the MPA
+
+diffPoly <- st_difference(polys, st_union(wap))  
+
+
+
+diffPoly$Zone[diffPoly$Name=="EI" | diffPoly$Name=="SSIW" |
+                diffPoly$Name=="SWAP" |  diffPoly$Name=="NWAP"|
+                diffPoly$Name=="SOI" ]<-"GPZ"
+
+diffPoly$Zone[is.na(diffPoly$Zone)]<-"SPZ"
+
+plot(diffPoly)
+
+# save as shapefile to use on other GIS
+st_write(diffPoly, dsn = "C:/D1MPA_2024_Harmony/D1MPA_Harmonized/GPZ-SPZ",
+         layer="D1MPA_Vertices_2024", driver="ESRI Shapefile",
+         append=FALSE)
+
+#or save as Rds
+
+saveRDS(diffPoly,"C:/D1MPA_2024_Harmony/D1MPA_Harmonized/GPZ-SPZ/VerticesD1MPA_Vertices_2023.Rds")
+
+
+
+```
+
+And finally, calculate layers coverage (based on the overlap with fishable areas, see main document) to assign seasonal protection zones to those layers whose GPZ coverage was below the 50%.
+
+```{r}
+
+
+###--- coverage --------
+
+### load subareas and strata files
+
+strata<-shapefile("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Shapefiles/Subareas_Strata.shp")
+plot(strata)
+
+summary(as.factor(strata$SubArea))
+
+gpz<-shapefile("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/GPZ-SPZ/D1MPA_Vertices_2024.shp")
+head(gpz)
+summary(as.factor(gpz$Name))
+summary(as.factor(gpz$Zone))
+plot(gpz)
+
+# preferred fishable area
+
+fa<-shapefile("C:/D1MPA_2024_Harmony/D1MPA_Harmonized/Shapefiles/Fishable_Area.shp")
+plot(fa)
+
+### spatial points
+
+spt<-shapefile("C:/D1MPA trimestral/D1MPA Fishable Area/Shapefiles/Grid_Points_D1.shp")
+
+head(spt)
+
+stfa<- (over(x = spt, y = fa))
+
+summary(as.factor(stfa$Fishable))
+
+stfa<-SpatialPointsDataFrame(coordinates(spt),stfa[4],proj4string = crs(spt))
+
+#-----strata coverage -----------
+
+st.points<- (over(x = stfa, y = strata))
+
+summary(as.factor(st.points$SubArea))
+
+stratas<-data.frame(st.points[4],stfa[1], coordinates(spt))
+
+stgrid<-SpatialPointsDataFrame(coordinates(spt),stratas)
+
+#plot(stgrid)
+
+stvect<-vect(stgrid)
+
+head(stvect)
+
+summary(as.factor(stvect$SubArea))
+
+ext.st<-terra::extract(rasters, stvect)
+
+head(ext.st)
+
+st.df <- data.frame(FA=stvect$Fishable,SA=stvect$SubArea,ext.st[2:54])
+
+head(st.df)
+
+summary(as.factor(st.df$SA))
+summary(as.factor(st.df$FA))
+
+
+###--------- gpz covergae-----
+
+gpz.points<- (over(x = stfa, y = gpz))
+
+gpzs<-data.frame(gpz.points)
+head(gpzs)
+summary(as.factor(gpzs$Name))
+
+summary(as.factor(gpzs$Zone))
+
+sfdf<-data.frame(st.df[1:2],gpzs)
+
+head(sfdf)
+
+gpzgrid<-SpatialPointsDataFrame(coordinates(stfa),sfdf)
+
+gpzvect<-vect(gpzgrid)
+
+head(gpzvect)
+
+ext.gpz<-terra::extract(rasters, gpzvect)
+
+gpz.df <- data.frame(sfdf[1:4],ext.gpz[2:54])
+
+ggplot(gpz.df,aes(SA,fill=Zone))+geom_bar(stat = "count")
+
+#gpz.df$SA[is.na(gpz.df$SA)]<-"Outside"
+
+summary(as.factor(gpz.df$FA))
+summary(as.factor(gpz.df$Name))
+
+
+###-----coverage calcualtion ---------
+
+total<- data.frame(st.df[3:55]) %>%
+  #group_by(FA) %>%
+  summarise_all(sum, na.rm = TRUE)
+
+totalF<- data.frame(st.df[1],st.df[3:55]) %>%
+  group_by(FA) %>%
+  summarise_all(sum, na.rm = TRUE)
+
+totalF<-subset(totalF,FA=="Yes")
+
+
+SAO <- st.df[2:55] %>%
+  group_by(SA) %>%
+  summarise_all(sum, na.rm = TRUE)
+
+SAF <- st.df %>%
+  group_by(FA,SA) %>%
+  summarise_all(sum, na.rm = TRUE)
+
+SAF<-subset(SAF,FA=="Yes")
+SAO
+SAF
+
+
+head(gpz.df)
+
+
+gpz_only<-subset(gpz.df,Zone=="GPZ")
+
+summary(as.factor(gpz_only$SA))
+
+GPZ <- data.frame(gpz_only[2],gpz_only[5:57]) %>%
+  group_by(SA) %>%
+  summarise_all(sum, na.rm = TRUE)
+
+GPF <- data.frame(gpz_only[1:2],gpz_only[5:57]) %>%
+  group_by(FA,SA) %>%
+  summarise_all(sum, na.rm = TRUE)
+
+GPF<-subset(GPF,FA=="Yes")
+
+totm<-melt(total)
+tofm<-melt(totalF)
+
+saom<-melt(SAO,id.vars=c("SA"))
+safm<-melt(SAF,id.vars=c("FA","SA"))
+
+gpzm<-na.omit(melt(GPZ,id.vars=c("SA")))
+gpfm<-na.omit(melt(GPF,id.vars=c("FA","SA")))
+
+names(totm)[names(totm) == "value"] <- "range"
+names(saom)[names(saom) == "value"] <- "SA.cover"
+names(gpzm)[names(gpzm) == "value"] <- "GPZ.cover"
+
+names(tofm)[names(tofm) == "value"] <- "rangeF"
+names(safm)[names(safm) == "value"] <- "SA.coverF"
+names(gpfm)[names(gpfm) == "value"] <- "GPZ.coverF"
+
+head(gpfm)
+
+head(safm)
+
+head(tofm)
+
+gpz.st<-merge(gpzm,saom,all=T)
+
+alldf<-merge(gpz.st,totm,all=T)
+head(alldf)
+
+alldff1<-merge(alldf,tofm)
+alldff2<-merge(alldff1,safm)
+alldf<-merge(alldff2,gpfm)
+
+head(alldf)
+
+names(alldf)[names(alldf) == "variable"] <- "layers"
+
+alldf$sa.fa.prop<-alldf$SA.coverF/alldf$SA.cover
+
+alldf$sa.fa.prop[is.na(alldf$sa.fa.prop)]<-0
+
+
+### if a layer has more than 75% of its occurrence within fishable area, it is a priority
+
+
+alldf$priority<-ifelse(alldf$sa.fa.prop>0.75,"Priority","Non-priority")
+
+alldf$GPZ.prop<-alldf$GPZ.cover/alldf$SA.cover
+
+alldf$GPZ.prop[is.na(alldf$GPZ.prop)]<-0
+
+
+
+head(alldf)
+
+# specify layers. If it starts with K they are krill for the updated layers
+# if O, they are layers from 2018, except krill that is "o"
+# if other, they are updated predator layers
+
+alldf$type<-substring(alldf$layers,first=1,last=1)
+summary(as.factor(alldf$layers))
+summary(as.factor(alldf$type))
+
+alldf$types[alldf$type=="K"]<-"Krill updated"
+alldf$types[alldf$type=="O"]<-"layers 2018"
+alldf$types[is.na(alldf$types)]<-"predators updated"
+
+alldf$types[alldf$layers=="obj_5b_Esuperba"]<-"Krill updated"
+
+summary(as.factor(alldf$types))
+
+layers_2018<-subset(alldf,types=="layers 2018")
+predators<-subset(alldf,types=="predators updated")
+
+krill<-subset(alldf,types=="Krill updated" )
+
+
+gpzS<-subset(predators,layers!="Penguin_Gentoo_AMJ" & layers!="Penguin_Gentoo_JAS" &
+               layers!="Penguin_Chinstrap_AMJ" & layers!="Penguin_Chinstrap_JAS"&
+               layers!="Seal_Crabeater_AMJ"&layers!="Seal_Crabeater_JAS"&
+               layers!="Seal_Elephant_AMJ"&layers!="Seal_Elephant_JAS"&
+               layers!="Seal_Fur_AMJ"&layers!="Seal_Fur_JAS"&
+               layers!="Whale_Humpback_AMJ"&layers!="Whale_AntMinke_AMJ"&
+               layers!="Penguin_Emperor_Cols" & layers!="obj_5b_Esuperba" & 
+               layers!="AFS_BS_SOI" )
+#winter layers
+
+
+gpzW<-subset(predators,layers=="Penguin_Gentoo_AMJ" | layers=="Penguin_Gentoo_JAS" |
+               layers=="Penguin_Chinstrap_AMJ" | layers=="Penguin_Chinstrap_JAS"|
+               layers=="Seal_Crabeater_AMJ"|layers=="Seal_Crabeater_JAS"|
+               layers=="Seal_Elephant_AMJ"|layers=="Seal_Elephant_JAS"|
+               layers=="Seal_Fur_AMJ"|layers=="Seal_Fur_JAS"|
+               layers=="Whale_Humpback_AMJ"|layers=="Whale_AntMinke_AMJ"|
+               layers=="Penguin_Emperor_Cols")
+
+
+# 2018 layers 
+
+(ggplot(layers_2018,aes(layers,GPZ.prop,colour=priority))+
+    geom_segment( aes(x=layers, xend=layers, y=0.5, yend=GPZ.prop),
+                  linetype="dotted") +
+    geom_point(size=2)+
+    geom_hline(yintercept=c(0.5))+
+    facet_wrap(SA~.)+coord_flip()+
+    scale_colour_manual(values=c("blue","red"))+
+    ggtitle(label="")+theme_bw()+
+    xlab("layers")+ylab("Proportion of GPZ coverage")+
+    ggtitle(label="Layers 2018"))
+
+### layers 2024 
+
+(ggplot((krill),aes(layers,GPZ.prop,colour=priority))+
+    geom_segment( aes(x=layers, xend=layers, y=0.2, yend=GPZ.prop),
+                  linetype="dotted") +
+    geom_point(size=2)+
+    geom_hline(yintercept=c(0.2))+
+    facet_wrap(SA~.)+coord_flip()+
+    scale_colour_manual(values=c("blue","red"))+
+    ggtitle(label="")+theme_bw()+
+    xlab("Summer layers")+ylab("Proportion of GPZ coverage")+
+    ggtitle(label="a. Layers 2024 Krill"))/
+  
+  # summer layers
+  
+  (ggplot((gpzS),aes(layers,GPZ.prop,colour=priority))+
+     geom_segment( aes(x=layers, xend=layers, y=0.5, yend=GPZ.prop),
+                   linetype="dotted") +
+     geom_point(size=2)+
+     geom_hline(yintercept=c(0.5))+
+     facet_wrap(SA~.)+coord_flip()+
+     scale_colour_manual(values=c("blue","red"))+
+     ggtitle(label="")+theme_bw()+
+     xlab("Summer layers")+ylab("Proportion of GPZ coverage")+
+     ggtitle(label="b. Layers 2024 October to March"))/
+  
+  # a part of fish habitat is inside SOISS MPA. That might increase coverage
+  
+  
+  
+  #Winter layers
+  
+  (ggplot((gpzW),aes(layers,GPZ.prop,colour=priority))+
+     geom_segment( aes(x=layers, xend=layers, y=0.5, yend=GPZ.prop),
+                   linetype="dotted") +
+     geom_point(size=2)+
+     geom_hline(yintercept=c(0.5))+
+     facet_wrap(SA~.)+coord_flip()+
+     scale_colour_manual(values=c("blue","red"))+
+     ggtitle(label="")+theme_bw()+
+     xlab("Winter layers")+ylab("Proportion of GPZ coverage")+
+     ggtitle(label="Layers 2024 April to September"))
+
+
+
+
+###---------- now, do the same with the SPZ considered----------
+
+
+###-----coverage calcualtion ---------
+
+head(gpz.df)
+
+gpz_spz<-subset(gpz.df,Zone=="GPZ"|Zone=="SPZ")
+
+summary(as.factor(gpz_spz$SA))
+
+SPZ <- data.frame(gpz_spz[2],gpz_spz[5:57]) %>%
+  group_by(SA) %>%
+  summarise_all(sum, na.rm = TRUE)
+
+SPF <- data.frame(gpz_spz[1:2],gpz_spz[5:57]) %>%
+  group_by(FA,SA) %>%
+  summarise_all(sum, na.rm = TRUE)
+
+SPF<-subset(SPF,FA=="Yes")
+
+spzm<-na.omit(melt(SPZ,id.vars=c("SA")))
+spfm<-na.omit(melt(SPF,id.vars=c("FA","SA")))
+summary(as.factor(spzm$SA))
+summary(as.factor(spfm$SA))
+
+names(spzm)[names(spzm) == "value"] <- "GPZ.cover"
+
+names(spfm)[names(spfm) == "value"] <- "GPZ.coverF"
+
+head(spfm)
+
+spz.st<-merge(spzm,saom,all=T)
+
+all<-merge(spz.st,totm,all=T)
+head(all)
+
+allf1<-merge(all,tofm)
+allf2<-merge(allf1,safm)
+allf<-merge(allf2,spfm)
+
+head(allf)
+
+names(allf)[names(allf) == "variable"] <- "layers"
+
+allf$sa.fa.prop<-allf$SA.coverF/allf$SA.cover
+
+allf$sa.fa.prop[is.na(allf$sa.fa.prop)]<-0
+
+
+### if a layer has more than 75% of its occurrence within fishable area, it is a priority
+
+
+allf$priority<-ifelse(allf$sa.fa.prop>0.75,"Priority","Non-priority")
+
+allf$GPZ.prop<-allf$GPZ.cover/allf$SA.cover
+
+allf$GPZ.prop[is.na(allf$GPZ.prop)]<-0
+
+head(allf)
+
+
+# specify layers. If it starts with X they are krill for the updated layers
+# if O, they are layers from 2018
+# if other, they are updated predator layers
+
+allf$type<-substring(allf$layers,first=1,last=1)
+
+summary(as.factor(allf$type))
+
+allf$types[allf$type=="X"]<-"Krill updated"
+allf$types[allf$type=="O"]<-"layers 2018"
+allf$types[is.na(allf$types)]<-"predators updated"
+
+allf$types[allf$layers=="obj_5b_Esuperba"]<-"Krill updated"
+
+prior<-subset(allf,priority=="Priority")
+head(prior)
+
+krillSPZ<-subset(prior,types=="Krill updated" )
+predatorsS<-subset(prior,types=="predators updated")
+
+gpzS1<-subset(predatorsS,layers!="Penguin_Gentoo_AMJ" & layers!="Penguin_Gentoo_JAS" &
+                 layers!="Penguin_Chinstrap_AMJ" & layers!="Penguin_Chinstrap_JAS"&
+                 layers!="Seal_Crabeater_AMJ"&layers!="Seal_Crabeater_JAS"&
+                 layers!="Seal_Elephant_AMJ"&layers!="Seal_Elephant_JAS"&
+                 layers!="Seal_Fur_AMJ"&layers!="Seal_Fur_JAS"&
+                 layers!="Whale_Humpback_AMJ"&layers!="Whale_AntMinke_AMJ"&
+                 layers!="Penguin_Emperor_Cols" & layers!="obj_5b_Esuperba" & 
+                 layers!="AFS_BS_SOI" & layers!="Seal_Crabeater_OND" )
+head(gpzS)
+
+gpzS0<-subset(gpzS,priority=="Priority")
+
+gpzS0$unit<-c("GPZ")
+gpzS1$unit<-c("GPZ + SPZ")
+
+head(gpzS0)
+head(gpzS1)
+
+gpzspz2<-rbind(gpzS0,gpzS1)
+
+
+### layers 2024 GPZ and GPZ+SPZ
+summary(as.factor(gpzspz2$layers))
+
+gpzspz2$layers<-factor(gpzspz2$layers,levels=c("bathy_150_500","bathy_0_150",
+                                               "Whale_Humpback_JFM",
+                                               "Whale_AntMinke_JFM","Seal_Elephant_JFM",
+                                               "IBA_CHP", "IBA_GEP","IBA_ADP"))
+
+(ggplot(na.omit(subset(gpzspz2,SA=="SA 48.1")),aes(layers,GPZ.prop,colour=unit))+
+    geom_segment( aes(x=layers, xend=layers, y=0.5, yend=GPZ.prop),
+                  linetype="dotted") +
+    geom_point(size=2)+
+    geom_hline(yintercept=c(0.5),linetype="dashed")+
+    facet_wrap(SA~.)+coord_flip()+
+    scale_colour_manual(values=c("blue","red"))+
+    ggtitle(label="")+theme_bw()+
+    xlab("Summer layers")+ylab("Proportion")+
+    ggtitle(label=" layers GPZ + SPZ coverage"))
+
+
+```
