@@ -1,0 +1,56 @@
+---
+title: "Domain 1 Marine Protected Areas Vertices to Polygon"
+author: "Lucas Krüger"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+## 
+This short script allows to load vertices from the Domain 1 Marine Protected Area as presented in the CM XXXX to CCAMLR
+and generate polygons
+
+```{r}
+library(raster)
+library(terra)
+library(sf)
+
+Peninsula<-readRDS("C:/D1MPA trimestral/D1MPA Fishable Area/Vertices/Peninsula.Rds") # land shapefile downloaded from the Antarctica Digital data base ('Gerrish, L., Ireland, L., Fretwell, P., & Cooper, P. (2023). High resolution vector polygons of the Antarctic coastline (7.7) [Data set]. UK Polar Data Centre, Natural Environment Research Council, UK Research & Innovation. https://doi.org/10.5285/0be5339c-9d35-44c9-a10f-da4b5356840b') and subsetted to match Domain 1 limits
+
+crs<-crs(Peninsula)  # coordinate system, South Polar Lambert Azimuthal Equal Area, ESRI 102020
+
+D1MPA<-read.csv("C:/D1MPA trimestral/D1MPA Fishable Area/Vertices/D1MPA_Vertices_2024.csv") # D1MPA vertices
+
+wap = st_as_sf(Peninsula)
+
+
+xys = st_as_sf(D1MPA, coords=c("Lon_ESRI_102020","Lat_ESRI_102020"),crs=crs) # convert to a simple feature object
+
+polys = xys %>% 
+  dplyr::group_by(Name) %>% 
+  dplyr::summarise(geometry = st_combine(geometry)) %>%
+  st_cast("POLYGON")
+
+plot(polys)
+
+
+### now eliminate the land from the MPA
+
+diffPoly <- st_difference(polys, st_union(wap))  
+
+
+plot(diffPoly, col=rainbow(50, alpha=0.5))
+
+
+
+# save as shapefile to use on other GIS
+st_write(diffPoly, dsn = "C:/D1MPA trimestral/D1MPA Fishable Area/Vertices",
+         layer="D1MPA_Vertices_2024", driver="ESRI Shapefile",
+         append=FALSE)
+
+#or save as Rds
+
+saveRDS(diffPoly,"C:/D1MPA trimestral/D1MPA Fishable Area/VerticesD1MPA_Vertices_2023.Rds")
+
+
+
+```
