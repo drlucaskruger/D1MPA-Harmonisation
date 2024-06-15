@@ -1,4 +1,4 @@
-
+Harmonizing the Domain 1 Marine Protected Area: new/updated krill and predators data to redefine boundaries and integrate seasonality in the MPA design
 
 Authors: Lucas Krüger1,2, Dolores Deregibus3,4, Lorena Rebolledo1, Francisco Santa Cruz1,2,5, Mercedes Santos3
 1 Departamento Científico, Instituto Antártico Chileno, Punta Arenas, Chile
